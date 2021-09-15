@@ -45,7 +45,8 @@ public class RequestExecutor {
             String command;
             String arg;
             String name;
-            SerializationFromClient clientRequest = new SerializationFromClient("", "", null, null);
+            String password;
+            SerializationFromClient clientRequest = new SerializationFromClient("", "", null, null, null);
             ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(datagramPacket.getData());
             ObjectInputStream objectInputStream = null;
             try {
@@ -62,7 +63,9 @@ public class RequestExecutor {
                         workerFactory.setLoadObject(clientRequest.getWorker());
                     }
                     name = clientRequest.getName();
-                    invoker.getReceiver().setName(name);
+                    password = clientRequest.getPassword();
+                    invoker.getReceiver().getDatabaseManager().setName(name);
+                    invoker.getReceiver().getDatabaseManager().setPassword(password);
                     invoker.exe(command, arg);
                 }
             } catch (IOException | ClassNotFoundException exception) {

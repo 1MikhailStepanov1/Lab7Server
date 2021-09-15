@@ -9,6 +9,6 @@ public class IsRegister extends CommandAbstract {
     }
     @Override
     public void exe(String arg){
-        receiver.isRegister(arg);
+        receiver.isRegister();
     }
 }

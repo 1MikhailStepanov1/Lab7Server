@@ -44,11 +44,11 @@ public class DatabaseManager {
         }
     }
 
-    public boolean checkUser(String arg){
+    public boolean checkUser(){
         try {
             PreparedStatement check = connection.prepareStatement(Statements.CHECK_USER);
             check.setString(1, name);
-            check.setBytes(2, messageDigest.digest(arg.getBytes(StandardCharsets.UTF_8)));
+            check.setBytes(2, messageDigest.digest(password.getBytes(StandardCharsets.UTF_8)));
             ResultSet result = check.executeQuery();
             return result.next();
         } catch (SQLException exception) {

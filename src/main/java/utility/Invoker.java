@@ -1,6 +1,7 @@
 package utility;
 
 import command.*;
+import utility.database.DatabaseManager;
 
 import java.util.HashMap;
 import java.util.concurrent.locks.ReentrantLock;
@@ -13,10 +14,12 @@ public class Invoker {
     private final HashMap<String, CommandInterface> commands;
     private final Receiver receiver;
     private ReentrantLock lock = new ReentrantLock();
+    private final DatabaseManager databaseManager;
 
-    public Invoker(Receiver receiver) {
+    public Invoker(Receiver receiver, DatabaseManager databaseManager) {
         commands = new HashMap<>();
         this.receiver = receiver;
+        this.databaseManager = databaseManager;
     }
 
     public Receiver getReceiver() {
@@ -41,7 +44,6 @@ public class Invoker {
         commands.put("filter_greater_than_start_date", new FilterGreaterThanStartDate(receiver));
         commands.put("validate_id", new ValidateId(receiver));
         commands.put("isRegister", new IsRegister(receiver));
-        commands.put("registerName", new RegisterName(receiver));
         commands.put("registerPassword", new RegisterPassword(receiver));
         commands.put("register", new Register(receiver));
     }
@@ -62,12 +64,14 @@ public class Invoker {
         @Override
         public void run() {
             locker.lock();
-            if (commands.containsKey(command)) {
-                commands.get(command).exe(arg);
-                locker.unlock();
-            } else {
-                System.out.println("Input is incorrect.");
-            }
+            if (command.equals("isRegister") || command.equals("registerName") || command.equals("registerPassword") || command.equals("register") || databaseManager.checkUser()) {
+                if (commands.containsKey(command)) {
+                    commands.get(command).exe(arg);
+                    locker.unlock();
+                } else {
+                    System.out.println("Input is incorrect.");
+                }
+            } else receiver.wrongSession();
         }
     }
 

@@ -9,12 +9,14 @@ public class SerializationFromClient implements Serializable {
     private String arg;
     private Worker worker;
     private String name;
+    private String password;
 
-    public SerializationFromClient(String command, String arg, Worker worker, String name) {
+    public SerializationFromClient(String command, String arg, Worker worker, String name, String password) {
         this.command = command;
         this.arg = arg;
         this.worker = worker;
         this.name = name;
+        this.password = password;
     }
 
     public String getCommand() {
@@ -32,6 +34,8 @@ public class SerializationFromClient implements Serializable {
     public String getName() {
         return name;
     }
-
+    public String getPassword(){
+        return password;
+    }
 
 }

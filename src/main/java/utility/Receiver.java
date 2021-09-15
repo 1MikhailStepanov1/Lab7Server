@@ -16,7 +16,7 @@ public class Receiver {
     private final WorkerFactory workerFactory;
     private final AnswerSender answerSender;
     private final DatabaseManager databaseManager;
-    private String name;
+
 
     public Receiver(CollectionManager collectionManager, AnswerSender answerSender, WorkerFactory workerFactory, DatabaseManager databaseManager) {
         this.collectionManager = collectionManager;
@@ -26,20 +26,17 @@ public class Receiver {
 
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void isRegister(String arg){
-        answerSender.addToAnswer(databaseManager.checkName(name), null, null ,null);
+    public void wrongSession(){
+        answerSender.addToAnswer(false, "Incorrect user session.", null, null);
         answerSender.sendAnswer();
     }
-    public void registerName(String arg){
-        databaseManager.setName(name);
+    public DatabaseManager getDatabaseManager(){
+        return databaseManager;
+    }
+
+    public void isRegister(){
+        answerSender.addToAnswer(databaseManager.checkName(databaseManager.getName()), null, null ,null);
+        answerSender.sendAnswer();
     }
     public void registerPassword(String arg){
         databaseManager.setPassword(arg);
@@ -49,7 +46,7 @@ public class Receiver {
         answerSender.addToAnswer(true, null, null ,null);
     }
     public void authorize(String arg){
-        answerSender.addToAnswer(databaseManager.checkUser(name), null ,null, null);
+        answerSender.addToAnswer(databaseManager.checkUser(), null ,null, null);
         answerSender.sendAnswer();
 
     }
@@ -57,7 +54,7 @@ public class Receiver {
         Worker worker = (Worker) workerFactory.getLoadObject();
         worker.setId(databaseManager.getNewId());
         workerFactory.setStartId(worker.getId());
-        if (databaseManager.addWorker(name, worker)){
+        if (databaseManager.addWorker(databaseManager.getName(), worker)){
             collectionManager.add(worker);
             answerSender.addToAnswer(true, "Worker was added to the collection.", null, null);
         } else{
@@ -72,7 +69,7 @@ public class Receiver {
         worker.setId(databaseManager.getNewId());
         workerFactory.setStartId(worker.getId());
         if (collectionManager.addIfMax(worker)){
-            if (databaseManager.addWorker(name, worker)) {
+            if (databaseManager.addWorker(databaseManager.getName(), worker)) {
                 answerSender.addToAnswer(true, "Worker was added to the collection.", null, null);
             } else {
                 answerSender.addToAnswer(false, "SQL problems.", null, null);
@@ -86,8 +83,8 @@ public class Receiver {
 
     public void clear() {
         collectionManager.clear();
-        if (databaseManager.clear(name)) {
-            answerSender.addToAnswer(true, "Workers of user " + name + " has been cleared.", null, null);
+        if (databaseManager.clear(databaseManager.getName())) {
+            answerSender.addToAnswer(true, "Workers of user " + databaseManager.getName() + " has been cleared.", null, null);
         } else answerSender.addToAnswer(false, "SQL problems.", null, null);
         logger.info("Result of command \"clear\" has been sent to client.");
         answerSender.sendAnswer();
@@ -131,7 +128,7 @@ public class Receiver {
             id = Long.parseLong(arg);
             CollectionValidator collectionValidator = new CollectionValidator(collectionManager);
             if (collectionValidator.checkExistId(id)) {
-                String answer = databaseManager.removeById(name, id);
+                String answer = databaseManager.removeById(databaseManager.getName(), id);
                 switch (answer) {
                     case "good":
                         collectionManager.removeById(id);
@@ -161,7 +158,7 @@ public class Receiver {
             answerSender.addToAnswer(false, "There is no elements in collection which are greater than indicated one.", null, null);
         } else {
             for (Worker worker1 : temp) {
-                String answer = databaseManager.removeById(name, worker1.getId());
+                String answer = databaseManager.removeById(databaseManager.getName(), worker1.getId());
                 switch (answer) {
                     case "good":
                         collectionManager.removeById(worker1.getId());
@@ -188,7 +185,7 @@ public class Receiver {
             answerSender.addToAnswer(false, "There is no elements in collection which are lower than indicated one.", null, null);
         } else {
             for (Worker worker1 : temp) {
-                String answer = databaseManager.removeById(name, worker1.getId());
+                String answer = databaseManager.removeById(databaseManager.getName(), worker1.getId());
                 switch (answer) {
                     case "good":
                         collectionManager.removeById(worker1.getId());
@@ -221,7 +218,7 @@ public class Receiver {
             tempId = Long.parseLong(arg);
             CollectionValidator collectionValidator = new CollectionValidator(collectionManager);
             if (collectionValidator.checkExistId(tempId)) {
-                String answer = databaseManager.update(name, worker, tempId);
+                String answer = databaseManager.update(databaseManager.getName(), worker, tempId);
                 switch (answer) {
                     case "good":
                         collectionManager.removeById(tempId);

@@ -30,9 +30,6 @@ public class Main {
         try {
             if (args.length > 0) {
                 port = Integer.parseInt(args[1]);
-            } else {
-                System.out.println("Incorrect command line arguments. Please, follow the format: \"port\".");
-                return;
             }
         } catch (NumberFormatException exception) {
             System.out.println("Incorrect format of port.");
@@ -52,17 +49,19 @@ public class Main {
         answerSender.setSocketAddress(datagramSocket.getLocalSocketAddress());
         WorkerFactory workerFactory = new WorkerFactory();
         workerFactory.setStartId(collectionManager.getLastId());
-        Connection connection = null;
-        try {
-           connection = DatabaseConnector.connection();
-        } catch (SQLException exception) {
-            System.out.println("Database connection problems.");
-            exception.printStackTrace();
-            return;
-        } catch (NoDatabaseDataException exception) {
-            System.out.println(exception.getMessage());
-            return;
-        }
+//        Connection connection = null;
+//        try {
+//           connection = DatabaseConnector.connection();
+//        } catch (SQLException exception) {
+//            System.out.println("Database connection problems.");
+//            exception.printStackTrace();
+//            return;
+//        } catch (NoDatabaseDataException exception) {
+//            System.out.println(exception.getMessage());
+//            return;
+//        }
+        DatabaseConnector databaseConnector = new DatabaseConnector();
+        Connection connection = databaseConnector.makeConnection();
         DatabaseInitializer databaseInitializer = new DatabaseInitializer(connection);
         try {
             databaseInitializer.initializeTable();
@@ -79,10 +78,11 @@ public class Main {
         }
         databaseManager.updateCollection();
         Receiver receiver = new Receiver(collectionManager, answerSender, workerFactory, databaseManager);
-        Invoker invoker = new Invoker(receiver);
+        Invoker invoker = new Invoker(receiver, databaseManager);
         invoker.initMap();
         RequestExecutor executor = new RequestExecutor(workerFactory, logger, invoker);
         RequestAcceptor requestAcceptor = new RequestAcceptor(answerSender, executor);
+        System.out.println("Server is ready to work.");
         requestAcceptor.acceptRequest(datagramSocket);
         try {
             logger.info("Server started on address " + InetAddress.getLocalHost() + " port: " + port);

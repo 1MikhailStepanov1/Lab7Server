@@ -13,21 +13,21 @@ public class DatabaseInitializer {
     public void initializeTable() throws SQLException {
         Statement statement = connection.createStatement();
         statement.executeUpdate("CREATE SEQUENCE IF NOT EXISTS ids START 1");
-        statement.executeUpdate("CREATE TABLE IF NOT EXISTS 312709workers (" +
-                "id bigint PRIMARY KEY" +
-                "name varchar (255) NOT NULL" +
-                "coordianteX bigint NOT NULL CHECK(coordinateX < 769)" +
-                "coordinateY int NOT NULL" +
-                "creationDate date DEFAULT (current_date)"+
-                "salary double NOT NULL CHECK (salary  > 0)" +
-                "startDate timestamp with time zone NOT NULL " +
-                "endDate timestamp with time zone " +
-                "pos varchar(20)" +
-                "height bigint NOT NULL CHECK(height > 0)" +
-                "weight int NOT NULL CHECK(weight > 0)"+
+        statement.executeUpdate("CREATE TABLE IF NOT EXISTS workers312709 (" +
+                "id bigint PRIMARY KEY," +
+                "name varchar (255) NOT NULL," +
+                "coordinateX bigint NOT NULL CHECK(coordinateX < 769)," +
+                "coordinateY int NOT NULL," +
+                "creationDate date DEFAULT (current_date),"+
+                "salary real NOT NULL CHECK (salary  > 0)," +
+                "startDate timestamp with time zone NOT NULL," +
+                "endDate timestamp with time zone," +
+                "pos varchar(20)," +
+                "height bigint NOT NULL CHECK(height > 0)," +
+                "weight int NOT NULL CHECK(weight > 0),"+
                 "owner varchar(255) NOT NULL"
         +")");
-        statement.executeUpdate("CREATE TABLE IF NOT EXISTS 312709users(" +
+        statement.executeUpdate("CREATE TABLE IF NOT EXISTS users312709(" +
                 "login varchar(255) PRIMARY KEY," +
                 "password BYTEA DEFAULT (null)" +
                 ")");
