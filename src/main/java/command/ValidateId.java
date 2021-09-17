@@ -10,7 +10,7 @@ public class ValidateId extends CommandAbstract {
     }
 
     @Override
-    public void exe(String arg) {
-        receiver.validateId(arg);
+    public void exe(String arg, String name, String password) {
+        receiver.validateId(arg, name);
     }
 }

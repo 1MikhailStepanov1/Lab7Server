@@ -10,7 +10,7 @@ public class CommandAbstract implements CommandInterface {
     }
 
     @Override
-    public void exe(String arg) {
+    public void exe(String arg, String name, String password) {
 
     }
 }

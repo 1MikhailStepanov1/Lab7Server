@@ -1,5 +1,8 @@
 package utility.database;
 
+import data.Coordinates;
+import data.Person;
+import data.Position;
 import data.Worker;
 import utility.CollectionManager;
 
@@ -8,13 +11,14 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.*;
 import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.TimeZone;
 
 public class DatabaseManager {
     private final Connection connection;
     private final MessageDigest messageDigest;
     private final CollectionManager collectionManager;
-    private String name;
-    private String password;
     public DatabaseManager(Connection connection, CollectionManager collectionManager) throws NoSuchAlgorithmException {
         this.connection = connection;
         this.collectionManager = collectionManager;
@@ -33,7 +37,7 @@ public class DatabaseManager {
         }
     }
 
-    public void registerUser(){
+    public void registerUser(String name, String password){
         try {
             PreparedStatement register = connection.prepareStatement(Statements.ADD_USER);
             register.setString(1, name);
@@ -44,10 +48,10 @@ public class DatabaseManager {
         }
     }
 
-    public boolean checkUser(){
+    public boolean checkUser(String userName, String password){
         try {
             PreparedStatement check = connection.prepareStatement(Statements.CHECK_USER);
-            check.setString(1, name);
+            check.setString(1, userName);
             check.setBytes(2, messageDigest.digest(password.getBytes(StandardCharsets.UTF_8)));
             ResultSet result = check.executeQuery();
             return result.next();
@@ -75,9 +79,13 @@ public class DatabaseManager {
             addWorker.setDouble(5, worker.getSalary());
             Timestamp startDate = Timestamp.from(Instant.from(worker.getStartDate()));
             addWorker.setTimestamp(6, startDate);
-            Timestamp endDate = Timestamp.from(Instant.from(worker.getEndDate()));
-            addWorker.setTimestamp(7, endDate);
-            addWorker.setString(8, worker.getPosition().toString());
+            if (worker.getEndDate() != null) {
+                Timestamp endDate = Timestamp.from(Instant.from(worker.getEndDate()));
+                addWorker.setTimestamp(7, endDate);
+            } else addWorker.setTimestamp(7, null);
+            if (worker.getPosition() != null) {
+                addWorker.setString(8, worker.getPosition().toString());
+            } else addWorker.setString(8, null);
             addWorker.setLong(9, worker.getPerson().getHeight());
             addWorker.setInt(10, worker.getPerson().getWeight());
             addWorker.setString(11, userName);
@@ -94,14 +102,16 @@ public class DatabaseManager {
             PreparedStatement clear = connection.prepareStatement(Statements.CLEAR_WORKERS);
             clear.setString(1, userName);
             clear.executeUpdate();
-        } catch (SQLException exception) {
+            Statement updateId = connection.createStatement();
+            updateId.executeUpdate("ALTER SEQUENCE IF EXISTS ids RESTART WITH " + collectionManager.getLastId());
+            } catch (SQLException exception) {
             exception.printStackTrace();
             return false;
         }
         return true;
     }
 
-    public String removeById(String userName, long id){
+    public DatabaseCommandResult removeById(String userName, long id){
         try {
             PreparedStatement getById = connection.prepareStatement(Statements.GET_BY_ID);
             getById.setLong(1, id);
@@ -111,16 +121,30 @@ public class DatabaseManager {
                     PreparedStatement remove = connection.prepareStatement(Statements.DELETE_BY_ID);
                     remove.setLong(1, id);
                     remove.executeUpdate();
-                } else return "permission";
-            } else return "noId";
+                } else return DatabaseCommandResult.PERMISSION;
+            } else return DatabaseCommandResult.NO_ID;
         } catch (SQLException exception) {
             exception.printStackTrace();
-            return "SQL";
+            return DatabaseCommandResult.SQL;
         }
-        return "good";
+        return DatabaseCommandResult.GOOD;
     }
-
-    public String update(String userName, Worker worker, Long id){
+    public boolean getByIdAndOwner(String userName, Long id){
+        try {
+            PreparedStatement getByIdAndOwner = connection.prepareStatement(Statements.GET_BY_ID_AND_OWNER);
+            getByIdAndOwner.setLong(1, id);
+            getByIdAndOwner.setString(2, userName);
+            ResultSet result = getByIdAndOwner.executeQuery();
+            if (result.next()){
+                return true;
+            }
+        } catch (SQLException exception) {
+            exception.printStackTrace();
+            return false;
+        }
+        return false;
+    }
+    public DatabaseCommandResult update(String userName, Worker worker, Long id){
         try {
             PreparedStatement getById = connection.prepareStatement(Statements.GET_BY_ID);
             getById.setLong(1, id);
@@ -141,13 +165,13 @@ public class DatabaseManager {
                     update.setInt(9, worker.getPerson().getWeight());
                     update.setString(10, userName);
                     update.executeUpdate();
-                } else return "permission";
-            } else return "noId";
+                } else return DatabaseCommandResult.PERMISSION;
+            } else return DatabaseCommandResult.NO_ID;
         } catch (SQLException exception) {
             exception.printStackTrace();
-            return "SQL";
+            return DatabaseCommandResult.SQL;
         }
-        return "good";
+        return DatabaseCommandResult.GOOD;
     }
 
     public Long getNewId(){
@@ -163,19 +187,27 @@ public class DatabaseManager {
             return null;
         }
     }
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
+    public ArrayList<Worker> getByOwner(String userName){
+        try {
+            PreparedStatement getByOwner = connection.prepareStatement(Statements.GET_WORKERS_BY_OWNER);
+            getByOwner.setString(1, userName);
+            ResultSet result = getByOwner.executeQuery();
+            ArrayList<Worker> resultCollection = new ArrayList<>();
+            while (result.next()) {
+                resultCollection.add(new Worker(result.getLong(1),
+                        result.getString(2),
+                        new Coordinates(result.getLong(3), result.getInt(4)),
+                        result.getDate(5).toLocalDate().atStartOfDay(TimeZone.getDefault().toZoneId()),
+                        result.getDouble(6),
+                        ZonedDateTime.of(result.getTimestamp(7).toLocalDateTime(), TimeZone.getDefault().toZoneId()),
+                        result.getTimestamp(8) != null ? ZonedDateTime.of(result.getTimestamp(8).toLocalDateTime(), TimeZone.getDefault().toZoneId()) : null,
+                        Position.valueOf(result.getString(9)),
+                        new Person(result.getLong(10), result.getInt(11))));
+            }
+            return resultCollection;
+        } catch (SQLException exception) {
+            exception.printStackTrace();
+            return null;
+        }
     }
 }

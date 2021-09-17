@@ -5,6 +5,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import request.AnswerSender;
 import request.RequestAcceptor;
+import request.SerializationForClient;
+import utility.database.DatabaseCommandResult;
 import utility.database.DatabaseManager;
 
 import java.util.ArrayList;
@@ -27,232 +29,218 @@ public class Receiver {
     }
 
     public void wrongSession(){
-        answerSender.addToAnswer(false, "Incorrect user session.", null, null);
-        answerSender.sendAnswer();
+        answerSender.sendAnswer(new SerializationForClient(false, "Incorrect user session.", null, null));
     }
     public DatabaseManager getDatabaseManager(){
         return databaseManager;
     }
 
-    public void isRegister(){
-        answerSender.addToAnswer(databaseManager.checkName(databaseManager.getName()), null, null ,null);
-        answerSender.sendAnswer();
+    public void isRegister(String name){
+        logger.info("Validation of user name was sent to client.");
+        answerSender.sendAnswer(new SerializationForClient(databaseManager.checkName(name), null, null ,null));
     }
-    public void registerPassword(String arg){
-        databaseManager.setPassword(arg);
+    public void register(String name, String password){
+        databaseManager.registerUser(name, password);
+        logger.info("User was registered. Answer was sent to client.");
+        answerSender.sendAnswer(new SerializationForClient(true, null, null ,null));
     }
-    public void register(String arg){
-        databaseManager.registerUser();
-        answerSender.addToAnswer(true, null, null ,null);
-    }
-    public void authorize(String arg){
-        answerSender.addToAnswer(databaseManager.checkUser(), null ,null, null);
-        answerSender.sendAnswer();
+    public void authorize(String name, String password){
+        logger.info("User was authorized. Answer was sent to client.");
+        answerSender.sendAnswer(new SerializationForClient(databaseManager.checkUser(name, password), null ,null, null));
 
     }
-    public void add() {
+    public void add(String name) {
         Worker worker = (Worker) workerFactory.getLoadObject();
         worker.setId(databaseManager.getNewId());
         workerFactory.setStartId(worker.getId());
-        if (databaseManager.addWorker(databaseManager.getName(), worker)){
+        if (databaseManager.addWorker(name, worker)) {
             collectionManager.add(worker);
-            answerSender.addToAnswer(true, "Worker was added to the collection.", null, null);
-        } else{
-            answerSender.addToAnswer(false, "SQL problems.", null, null);
+            answerSender.sendAnswer(new SerializationForClient(true, "Worker was added to the collection.", null, null));
+        } else {
+            answerSender.sendAnswer(new SerializationForClient(false, "SQL problems.", null, null));
         }
         logger.info("Result of command \"add\" has been sent to client.");
-        answerSender.sendAnswer();
     }
 
-    public void addIfMax() {
+    public void addIfMax(String name) {
         Worker worker = (Worker) workerFactory.getLoadObject();
         worker.setId(databaseManager.getNewId());
         workerFactory.setStartId(worker.getId());
         if (collectionManager.addIfMax(worker)){
-            if (databaseManager.addWorker(databaseManager.getName(), worker)) {
-                answerSender.addToAnswer(true, "Worker was added to the collection.", null, null);
+            if (databaseManager.addWorker(name, worker)) {
+                answerSender.sendAnswer(new SerializationForClient(true, "Worker was added to the collection.", null, null) );
             } else {
-                answerSender.addToAnswer(false, "SQL problems.", null, null);
+                answerSender.sendAnswer(new SerializationForClient(false, "SQL problems.", null, null));
             }
         } else{
-            answerSender.addToAnswer(false, "There is a worker in collection, which is greater than indicated one.", null, null);
+            answerSender.sendAnswer(new SerializationForClient(false, "There is a worker in collection, which is greater than indicated one.", null, null));
         }
         logger.info("Result of command \"add_if_max\" has been sent to client.");
-        answerSender.sendAnswer();
     }
 
-    public void clear() {
-        collectionManager.clear();
-        if (databaseManager.clear(databaseManager.getName())) {
-            answerSender.addToAnswer(true, "Workers of user " + databaseManager.getName() + " has been cleared.", null, null);
-        } else answerSender.addToAnswer(false, "SQL problems.", null, null);
+    public void clear(String name) {
+        for (Worker worker : databaseManager.getByOwner(name)){
+            collectionManager.removeById(worker.getId());
+        }
+        if (databaseManager.clear(name)) {
+            answerSender.sendAnswer(new SerializationForClient(true, "Workers of user " + name + " has been cleared.", null, null));
+        } else answerSender.sendAnswer(new SerializationForClient(false, "SQL problems.", null, null));
         logger.info("Result of command \"clear\" has been sent to client.");
-        answerSender.sendAnswer();
     }
 
     public void countLessThanStartDate(String arg) {
         Long answer = collectionManager.countLessThanStartDate(arg);
-        answerSender.addToAnswer(true, "Suitable elements in the collection: ", answer, null);
+        answerSender.sendAnswer(new SerializationForClient(true, "Suitable elements in the collection: ", answer, null));
         logger.info("Result of command \"count_less_than_start_date\" has been sent to client.");
-        answerSender.sendAnswer();
     }
 
     public void filterGreaterThanStartDate(String arg) {
         LinkedList<Worker> answer = collectionManager.filterGreaterThanStartDate(arg);
         if (answer == null) {
-            answerSender.addToAnswer(false, "Collection doesn't contains satisfying elements.", null, null);
+            answerSender.sendAnswer(new SerializationForClient(false, "Collection doesn't contains satisfying elements.", null, null));
         } else {
-            answerSender.addToAnswer(true, "Command has done successfully.", null, answer);
+            answerSender.sendAnswer(new SerializationForClient(true, "Command has done successfully.", null, answer));
         }
         logger.info("Result of command \"filter_greater_than_start_date\" has been sent to client.");
-        answerSender.sendAnswer();
     }
 
     public void groupCountingByPosition() {
         String answer = collectionManager.groupCountingByPosition();
-        answerSender.addToAnswer(true, answer, null, null);
+        answerSender.sendAnswer(new SerializationForClient(true, answer, null, null));
         logger.info("Result of command \"group_counting_by_position\" has been sent to client.");
-        answerSender.sendAnswer();
     }
 
     public void info() {
         String answer = collectionManager.getInfo();
-        answerSender.addToAnswer(true, answer, null, null);
+        answerSender.sendAnswer(new SerializationForClient(true, answer, null, null));
         logger.info("Result of command \"info\" has been sent to client.");
-        answerSender.sendAnswer();
     }
 
-    public void removeById(String arg) {
+    public void removeById(String arg,String name) {
         long id;
         try {
             id = Long.parseLong(arg);
             CollectionValidator collectionValidator = new CollectionValidator(collectionManager);
             if (collectionValidator.checkExistId(id)) {
-                String answer = databaseManager.removeById(databaseManager.getName(), id);
+                DatabaseCommandResult answer = databaseManager.removeById(name, id);
                 switch (answer) {
-                    case "good":
+                    case GOOD:
                         collectionManager.removeById(id);
-                        answerSender.addToAnswer(true, "Element with id " + id + " has been removed.", null, null);
+                        answerSender.sendAnswer(new SerializationForClient(true, "Element with id " + id + " has been removed.", null, null));
                         break;
-                    case "permission":
-                        answerSender.addToAnswer(false, "You are not allowed to change this worker.", null, null);
+                    case PERMISSION:
+                        answerSender.sendAnswer(new SerializationForClient(false, "You are not allowed to change this worker.", null, null));
                         break;
-                    case "SQl":
-                        answerSender.addToAnswer(false, "SQL problems.", null, null);
+                    case SQL:
+                        answerSender.sendAnswer(new SerializationForClient(false, "SQL problems.", null, null));
                         break;
                 }
             } else {
-                answerSender.addToAnswer(false, "There is no elements with matched id in the collection.", null, null);
+                answerSender.sendAnswer(new SerializationForClient(false, "There is no elements with matched id in the collection.", null, null));
             }
         } catch (NumberFormatException exception) {
             System.out.println(exception.getMessage());
         }
         logger.info("Result of command \"remove_by_id\" has been sent to client.");
-        answerSender.sendAnswer();
     }
 
-    public void removeGreater() {
+    public void removeGreater(String name) {
         Worker worker = (Worker) workerFactory.getLoadObject();
         ArrayList<Worker> temp = collectionManager.getGreater(worker);
         if (temp.isEmpty()){
-            answerSender.addToAnswer(false, "There is no elements in collection which are greater than indicated one.", null, null);
+            answerSender.sendAnswer(new SerializationForClient(false, "There is no elements in collection which are greater than indicated one.", null, null));
         } else {
             for (Worker worker1 : temp) {
-                String answer = databaseManager.removeById(databaseManager.getName(), worker1.getId());
+                DatabaseCommandResult answer = databaseManager.removeById(name, worker1.getId());
                 switch (answer) {
-                    case "good":
+                    case GOOD:
                         collectionManager.removeById(worker1.getId());
-                        answerSender.addToAnswer(true, "Element with id " + worker1.getId() + " has been removed.", null, null);
+                        answerSender.sendAnswer(new SerializationForClient(true, "Element with id " + worker1.getId() + " has been removed.", null, null));
                         break;
-                    case "permission":
-                        answerSender.addToAnswer(false, "You are not allowed to change this worker.", null, null);
+                    case PERMISSION:
+                        answerSender.sendAnswer(new SerializationForClient(false, "You are not allowed to change this worker.", null, null));
                         break;
-                    case "SQl":
-                        answerSender.addToAnswer(false, "SQL problems.", null, null);
+                    case SQL:
+                        answerSender.sendAnswer(new SerializationForClient(false, "SQL problems.", null, null));
                         break;
                 }
             }
         }
 
         logger.info("Result of command \"remove_greater\" has been sent to client.");
-        answerSender.sendAnswer();
     }
 
-    public void removeLower() {
+    public void removeLower(String name) {
         Worker worker = (Worker) workerFactory.getLoadObject();
-        ArrayList<Worker> temp = collectionManager.getGreater(worker);
+        ArrayList<Worker> temp = collectionManager.getLower(worker);
         if (temp.isEmpty()){
-            answerSender.addToAnswer(false, "There is no elements in collection which are lower than indicated one.", null, null);
+            answerSender.sendAnswer(new SerializationForClient(false, "There is no elements in collection which are lower than indicated one.", null, null));
         } else {
             for (Worker worker1 : temp) {
-                String answer = databaseManager.removeById(databaseManager.getName(), worker1.getId());
+                DatabaseCommandResult answer = databaseManager.removeById(name, worker1.getId());
                 switch (answer) {
-                    case "good":
+                    case GOOD:
                         collectionManager.removeById(worker1.getId());
-                        answerSender.addToAnswer(true, "Element with id " + worker1.getId() + " has been removed.", null, null);
+                        answerSender.sendAnswer(new SerializationForClient(true, "Element with id " + worker1.getId() + " has been removed.", null, null));
                         break;
-                    case "permission":
-                        answerSender.addToAnswer(false, "You are not allowed to change this worker.", null, null);
+                    case PERMISSION:
+                        answerSender.sendAnswer(new SerializationForClient(false, "You are not allowed to change this worker.", null, null));
                         break;
-                    case "SQl":
-                        answerSender.addToAnswer(false, "SQL problems.", null, null);
+                    case SQL:
+                        answerSender.sendAnswer(new SerializationForClient(false, "SQL problems.", null, null));
                         break;
                 }
             }
         }
 
         logger.info("Result of command \"remove_greater\" has been sent to client.");
-        answerSender.sendAnswer();
     }
 
     public void show() {
-        answerSender.addToAnswer(true, "", null, collectionManager.show());
+        answerSender.sendAnswer(new SerializationForClient(true, "", null, collectionManager.show()));
         logger.info("Result of command \"show\" has been sent to client.");
-        answerSender.sendAnswer();
     }
 
-    public void update(String arg) {
+    public void update(String arg, String name) {
         Long tempId;
         Worker worker = (Worker) workerFactory.getLoadObject();
         try {
             tempId = Long.parseLong(arg);
-            CollectionValidator collectionValidator = new CollectionValidator(collectionManager);
-            if (collectionValidator.checkExistId(tempId)) {
-                String answer = databaseManager.update(databaseManager.getName(), worker, tempId);
+            if (databaseManager.getByIdAndOwner(name, tempId)) {
+                DatabaseCommandResult answer = databaseManager.update(name, worker, tempId);
                 switch (answer) {
-                    case "good":
-                        collectionManager.removeById(tempId);
-                        answerSender.addToAnswer(true, "Element with id " + tempId + " has been removed.", null, null);
+                    case GOOD:
+                        collectionManager.update(tempId, worker);
+                        answerSender.sendAnswer(new SerializationForClient(true, "Element with id " + tempId + " has been removed.", null, null));
                         break;
-                    case "permission":
-                        answerSender.addToAnswer(false, "You are not allowed to change this worker.", null, null);
+                    case PERMISSION:
+                        answerSender.sendAnswer(new SerializationForClient(false, "You are not allowed to change this worker.", null, null));
                         break;
-                    case "SQl":
-                        answerSender.addToAnswer(false, "SQL problems.", null, null);
+                    case SQL:
+                        answerSender.sendAnswer(new SerializationForClient(false, "SQL problems.", null, null));
                         break;
                 }
             } else {
-                answerSender.addToAnswer(false, "There is no elements with matched id in the collection.", null, null);
+                answerSender.sendAnswer(new SerializationForClient(false, "There is no elements with matched id in the collection.", null, null));
             }
         } catch (NumberFormatException exception) {
-            answerSender.addToAnswer(false, "Command is incorrect.", null, null);
+            answerSender.sendAnswer(new SerializationForClient(false, "Command is incorrect.", null, null));
         }
         logger.info("Result of command \"update\" has been sent to client.");
-        answerSender.sendAnswer();
     }
 
-    public void validateId(String arg) {
+    public void validateId(String arg, String name) {
         Long tempId;
         try {
             tempId = Long.parseLong(arg);
-            CollectionValidator collectionValidator = new CollectionValidator(collectionManager);
-            answerSender.addToAnswer(collectionValidator.checkExistId(tempId), "", null, null);
+            boolean temp = databaseManager.getByIdAndOwner(name, tempId);
+            if (temp) {
+                answerSender.sendAnswer(new SerializationForClient(true, "", null, null));
+            } else answerSender.sendAnswer(new SerializationForClient(false, "There is no element with the same id or you don't have permission to interact with it.", null, null));
         } catch (NumberFormatException exception) {
-            answerSender.addToAnswer(false, "", null, null);
+            answerSender.sendAnswer(new SerializationForClient(false, "", null, null));
         }
         logger.info("Result of validation has been sent to client.");
-        answerSender.sendAnswer();
     }
-
 
 }

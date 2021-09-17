@@ -3,10 +3,6 @@ package request;
 import org.slf4j.Logger;
 import utility.Invoker;
 import utility.WorkerFactory;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.net.DatagramPacket;
 
 public class RequestExecutor {
@@ -29,83 +25,38 @@ public class RequestExecutor {
         this.data = data;
     }
 
-    public RequestExecutorRunnable execute(DatagramPacket datagramPacket) {
-        return new RequestExecutorRunnable(datagramPacket);
+    public void execute(SerializationFromClient serializationFromClient) {
+        RequestExecutorRunnable requestExecutorRunnable = new RequestExecutorRunnable(serializationFromClient);
+        new Thread(requestExecutorRunnable).start();
     }
 
     private class RequestExecutorRunnable implements Runnable {
-        private DatagramPacket datagramPacket;
+        private SerializationFromClient clientRequest;
 
-        private RequestExecutorRunnable(DatagramPacket datagramPacket) {
-            this.datagramPacket = datagramPacket;
+        private RequestExecutorRunnable(SerializationFromClient serializationFromClient) {
+            clientRequest = serializationFromClient;
         }
 
         public void run() {
-            Object raw;
             String command;
             String arg;
             String name;
             String password;
-            SerializationFromClient clientRequest = new SerializationFromClient("", "", null, null, null);
-            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(datagramPacket.getData());
-            ObjectInputStream objectInputStream = null;
-            try {
-                objectInputStream = new ObjectInputStream(byteArrayInputStream);
-                raw = objectInputStream.readObject();
-                if (raw instanceof SerializationFromClient) {
-                    clientRequest = (SerializationFromClient) raw;
-                    logger.info("Received command: " + clientRequest.getCommand() + " " + clientRequest.getArg());
+            if (clientRequest != null) {
+                command = clientRequest.getCommand();
+                arg = clientRequest.getArg();
+                if (clientRequest.getWorker() != null) {
+                    workerFactory.setLoadObject(clientRequest.getWorker());
+                    System.out.println(clientRequest.getWorker().getId());
                 }
-                if (clientRequest != null) {
-                    command = clientRequest.getCommand();
-                    arg = clientRequest.getArg();
-                    if (clientRequest.getWorker() != null) {
-                        workerFactory.setLoadObject(clientRequest.getWorker());
-                    }
-                    name = clientRequest.getName();
-                    password = clientRequest.getPassword();
-                    invoker.getReceiver().getDatabaseManager().setName(name);
-                    invoker.getReceiver().getDatabaseManager().setPassword(password);
-                    invoker.exe(command, arg);
-                }
-            } catch (IOException | ClassNotFoundException exception) {
-                exception.printStackTrace();
+                name = clientRequest.getName();
+                password = clientRequest.getPassword();
+                invoker.exe(command, arg, name, password);
             }
 
         }
     }
 }
-//    public void run(DatagramPacket packet){
-//        Object raw;
-//        String command;
-//        String arg;
-//        String name;
-//        SerializationFromClient clientRequest = new SerializationFromClient("", "", null,null);
-//        ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(packet.getData());
-//        ObjectInputStream objectInputStream = null;
-//        try {
-//            objectInputStream = new ObjectInputStream(byteArrayInputStream);
-//            raw = objectInputStream.readObject();
-//            if (raw instanceof SerializationFromClient) {
-//                clientRequest = (SerializationFromClient) raw;
-//                logger.info("Received command: " + clientRequest.getCommand() + " " + clientRequest.getArg());
-//            }
-//            if (clientRequest != null) {
-//                command = clientRequest.getCommand();
-//                arg = clientRequest.getArg();
-//                if (clientRequest.getWorker() != null) {
-//                    workerFactory.setLoadObject(clientRequest.getWorker());
-//                }
-//                name = clientRequest.getName();
-//                invoker.getReceiver().setName(name);
-//                invoker.exe(command, arg);
-//            }
-//        } catch (IOException | ClassNotFoundException exception) {
-//            exception.printStackTrace();
-//        }
-//
-//    }
-
 
 
 

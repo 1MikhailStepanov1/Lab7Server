@@ -18,13 +18,16 @@ import java.util.Date;
  */
 public class WorkerFactory {
     private Long id;
-    private Object loadObject;
+    private Worker loadObject;
+    private CollectionManager collectionManager;
 
-    public WorkerFactory() {
+    public WorkerFactory(CollectionManager collectionManager) {
+        this.collectionManager = collectionManager;
     }
 
-    public void setLoadObject(Object loadObject){
+    public void setLoadObject(Worker loadObject){
         this.loadObject = loadObject;
+        this.loadObject.setId(collectionManager.getLastId());
     }
     public Object getLoadObject(){
         return loadObject;

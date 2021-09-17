@@ -1,17 +1,17 @@
 import exceptions.NoDatabaseDataException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.xml.sax.SAXException;
 import request.AnswerSender;
 import request.RequestAcceptor;
 import request.RequestExecutor;
-import utility.*;
+import utility.CollectionManager;
+import utility.Invoker;
+import utility.Receiver;
+import utility.WorkerFactory;
 import utility.database.DatabaseConnector;
 import utility.database.DatabaseInitializer;
 import utility.database.DatabaseManager;
 
-import javax.xml.parsers.ParserConfigurationException;
-import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
@@ -47,21 +47,21 @@ public class Main {
         AnswerSender answerSender = new AnswerSender(logger);
         System.out.println(datagramSocket.getLocalSocketAddress());
         answerSender.setSocketAddress(datagramSocket.getLocalSocketAddress());
-        WorkerFactory workerFactory = new WorkerFactory();
+        WorkerFactory workerFactory = new WorkerFactory(collectionManager);
         workerFactory.setStartId(collectionManager.getLastId());
-//        Connection connection = null;
-//        try {
-//           connection = DatabaseConnector.connection();
-//        } catch (SQLException exception) {
-//            System.out.println("Database connection problems.");
-//            exception.printStackTrace();
-//            return;
-//        } catch (NoDatabaseDataException exception) {
-//            System.out.println(exception.getMessage());
-//            return;
-//        }
-        DatabaseConnector databaseConnector = new DatabaseConnector();
-        Connection connection = databaseConnector.makeConnection();
+        Connection connection = null;
+        try {
+           connection = DatabaseConnector.connection();
+        } catch (SQLException exception) {
+            System.out.println("Database connection problems.");
+            exception.printStackTrace();
+            return;
+        } catch (NoDatabaseDataException exception) {
+            System.out.println(exception.getMessage());
+            return;
+        }
+//        DatabaseConnector databaseConnector = new DatabaseConnector();
+//        Connection connection = databaseConnector.makeConnection();
         DatabaseInitializer databaseInitializer = new DatabaseInitializer(connection);
         try {
             databaseInitializer.initializeTable();
@@ -81,7 +81,7 @@ public class Main {
         Invoker invoker = new Invoker(receiver, databaseManager);
         invoker.initMap();
         RequestExecutor executor = new RequestExecutor(workerFactory, logger, invoker);
-        RequestAcceptor requestAcceptor = new RequestAcceptor(answerSender, executor);
+        RequestAcceptor requestAcceptor = new RequestAcceptor(answerSender, executor, logger);
         System.out.println("Server is ready to work.");
         requestAcceptor.acceptRequest(datagramSocket);
         try {

@@ -8,7 +8,7 @@ public class Clear extends CommandAbstract {
         this.receiver = receiver;
     }
     @Override
-    public void exe(String arg){
-        receiver.clear();
+    public void exe(String arg, String name, String password){
+        receiver.clear(name);
     }
 }

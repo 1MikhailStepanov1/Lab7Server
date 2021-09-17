@@ -5,5 +5,5 @@ package command;
  */
 public interface CommandInterface {
 
-    void exe(String arg);
+    void exe(String arg, String name, String password);
 }

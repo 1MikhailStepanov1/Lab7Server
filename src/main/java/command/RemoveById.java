@@ -8,7 +8,7 @@ public class RemoveById extends CommandAbstract{
         this.receiver = receiver;
     }
     @Override
-    public void exe(String arg){
-        receiver.removeById(arg);
+    public void exe(String arg, String name, String password){
+        receiver.removeById(arg, name);
     }
 }

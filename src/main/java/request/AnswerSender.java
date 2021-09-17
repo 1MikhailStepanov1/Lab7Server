@@ -9,14 +9,13 @@ import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketAddress;
-import java.util.LinkedList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 public class AnswerSender {
     private final Logger logger;
-    private SerializationForClient answer;
     private SocketAddress socketAddress;
+    private final Executor executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()/3);
 
     public AnswerSender(Logger logger) {
         this.logger = logger;
@@ -26,12 +25,11 @@ public class AnswerSender {
         this.socketAddress = socketAddress;
     }
 
-    public void addToAnswer(boolean status, String message, Long count, LinkedList<Worker> workers) {
-        answer = new SerializationForClient(status, message, count, workers);
-    }
-
     private class SendingAnswer implements Runnable{
-        private SendingAnswer(){}
+        private SerializationForClient answer;
+        private SendingAnswer(SerializationForClient answer){
+            this.answer = answer;
+        }
         @Override
         public void run() {
             if (answer == null) {
@@ -54,8 +52,7 @@ public class AnswerSender {
             answer = null;
         }
     }
-    public void sendAnswer() {
-        Executor executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()/3);
-        executor.execute(new SendingAnswer());
+    public void sendAnswer(SerializationForClient serializationForClient) {
+        executor.execute(new SendingAnswer(serializationForClient));
     }
 }

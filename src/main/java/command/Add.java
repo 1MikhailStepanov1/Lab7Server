@@ -8,8 +8,8 @@ public class Add extends CommandAbstract{
         this.receiver = receiver;
     }
     @Override
-    public void exe(String arg){
-        receiver.add();
+    public void exe(String arg, String name, String password){
+        receiver.add(name);
     }
 
 }

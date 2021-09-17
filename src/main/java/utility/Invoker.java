@@ -4,7 +4,6 @@ import command.*;
 import utility.database.DatabaseManager;
 
 import java.util.HashMap;
-import java.util.concurrent.locks.ReentrantLock;
 
 
 /**
@@ -13,7 +12,6 @@ import java.util.concurrent.locks.ReentrantLock;
 public class Invoker {
     private final HashMap<String, CommandInterface> commands;
     private final Receiver receiver;
-    private ReentrantLock lock = new ReentrantLock();
     private final DatabaseManager databaseManager;
 
     public Invoker(Receiver receiver, DatabaseManager databaseManager) {
@@ -44,39 +42,18 @@ public class Invoker {
         commands.put("filter_greater_than_start_date", new FilterGreaterThanStartDate(receiver));
         commands.put("validate_id", new ValidateId(receiver));
         commands.put("isRegister", new IsRegister(receiver));
-        commands.put("registerPassword", new RegisterPassword(receiver));
         commands.put("register", new Register(receiver));
+        commands.put("authorize", new Authorize(receiver));
     }
 
-    private class RunRequest implements Runnable {
-        String command;
-        String arg;
-        HashMap<String, CommandInterface> commands;
-        ReentrantLock locker;
-
-        private RunRequest(String command, String arg, HashMap commands, ReentrantLock locker) {
-            this.command = command;
-            this.arg = arg;
-            this.commands = commands;
-            this.locker = locker;
-        }
-
-        @Override
-        public void run() {
-            locker.lock();
-            if (command.equals("isRegister") || command.equals("registerName") || command.equals("registerPassword") || command.equals("register") || databaseManager.checkUser()) {
-                if (commands.containsKey(command)) {
-                    commands.get(command).exe(arg);
-                    locker.unlock();
-                } else {
-                    System.out.println("Input is incorrect.");
-                }
-            } else receiver.wrongSession();
-        }
+    public void exe(String command, String arg, String name, String password) {
+        if (command.equals("isRegister") || command.equals("registerName") || command.equals("registerPassword") || command.equals("register") || databaseManager.checkUser(name, password)) {
+            if (commands.containsKey(command)) {
+                commands.get(command).exe(arg,name, password);
+            } else {
+                System.out.println("Input is incorrect.");
+            }
+        } else receiver.wrongSession();
     }
 
-    public void exe(String command, String arg) {
-        RunRequest runRequest = new RunRequest(command, arg, commands, lock);
-        new Thread(runRequest).start();
-    }
 }

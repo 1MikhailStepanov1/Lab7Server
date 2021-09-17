@@ -8,7 +8,7 @@ public class RemoveLower extends CommandAbstract{
         this.receiver = receiver;
     }
     @Override
-    public void exe(String arg){
-        receiver.removeLower();
+    public void exe(String arg, String name, String password){
+        receiver.removeLower(name);
     }
 }
