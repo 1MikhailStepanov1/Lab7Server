@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import utility.Invoker;
 import utility.WorkerFactory;
 import java.net.DatagramPacket;
+import java.net.SocketAddress;
 
 public class RequestExecutor {
     private final WorkerFactory workerFactory;
@@ -25,16 +26,18 @@ public class RequestExecutor {
         this.data = data;
     }
 
-    public void execute(SerializationFromClient serializationFromClient) {
-        RequestExecutorRunnable requestExecutorRunnable = new RequestExecutorRunnable(serializationFromClient);
+    public void execute(SerializationFromClient serializationFromClient, SocketAddress socketAddress) {
+        RequestExecutorRunnable requestExecutorRunnable = new RequestExecutorRunnable(serializationFromClient, socketAddress);
         new Thread(requestExecutorRunnable).start();
     }
 
     private class RequestExecutorRunnable implements Runnable {
         private SerializationFromClient clientRequest;
+        private SocketAddress socketAddress;
 
-        private RequestExecutorRunnable(SerializationFromClient serializationFromClient) {
+        private RequestExecutorRunnable(SerializationFromClient serializationFromClient, SocketAddress socketAddress) {
             clientRequest = serializationFromClient;
+            this.socketAddress = socketAddress;
         }
 
         public void run() {
@@ -51,7 +54,7 @@ public class RequestExecutor {
                 }
                 name = clientRequest.getName();
                 password = clientRequest.getPassword();
-                invoker.exe(command, arg, name, password);
+                invoker.exe(command, arg, name, password, socketAddress);
             }
 
         }

@@ -103,7 +103,7 @@ public class DatabaseManager {
             clear.setString(1, userName);
             clear.executeUpdate();
             Statement updateId = connection.createStatement();
-            updateId.executeUpdate("ALTER SEQUENCE IF EXISTS ids RESTART WITH " + collectionManager.getLastId());
+            updateId.executeUpdate("ALTER SEQUENCE IF EXISTS ids RESTART WITH " + collectionManager.getLastId()+1);
             } catch (SQLException exception) {
             exception.printStackTrace();
             return false;
@@ -121,6 +121,8 @@ public class DatabaseManager {
                     PreparedStatement remove = connection.prepareStatement(Statements.DELETE_BY_ID);
                     remove.setLong(1, id);
                     remove.executeUpdate();
+                    Statement updateId = connection.createStatement();
+                    updateId.executeUpdate("ALTER SEQUENCE IF EXISTS ids RESTART WITH " + collectionManager.getLastId()+1);
                 } else return DatabaseCommandResult.PERMISSION;
             } else return DatabaseCommandResult.NO_ID;
         } catch (SQLException exception) {

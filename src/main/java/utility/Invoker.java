@@ -3,6 +3,7 @@ package utility;
 import command.*;
 import utility.database.DatabaseManager;
 
+import java.net.SocketAddress;
 import java.util.HashMap;
 
 
@@ -46,14 +47,14 @@ public class Invoker {
         commands.put("authorize", new Authorize(receiver));
     }
 
-    public void exe(String command, String arg, String name, String password) {
+    public void exe(String command, String arg, String name, String password, SocketAddress socketAddress) {
         if (command.equals("isRegister") || command.equals("registerName") || command.equals("registerPassword") || command.equals("register") || databaseManager.checkUser(name, password)) {
             if (commands.containsKey(command)) {
-                commands.get(command).exe(arg,name, password);
+                commands.get(command).exe(arg, name, password, socketAddress);
             } else {
                 System.out.println("Input is incorrect.");
             }
-        } else receiver.wrongSession();
+        } else receiver.wrongSession(socketAddress);
     }
 
 }

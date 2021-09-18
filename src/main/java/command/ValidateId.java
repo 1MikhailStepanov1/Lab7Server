@@ -2,6 +2,8 @@ package command;
 
 import utility.Receiver;
 
+import java.net.SocketAddress;
+
 public class ValidateId extends CommandAbstract {
     private final Receiver receiver;
 
@@ -10,7 +12,7 @@ public class ValidateId extends CommandAbstract {
     }
 
     @Override
-    public void exe(String arg, String name, String password) {
-        receiver.validateId(arg, name);
+    public void exe(String arg, String name, String password, SocketAddress socketAddress) {
+        receiver.validateId(arg, name, socketAddress);
     }
 }

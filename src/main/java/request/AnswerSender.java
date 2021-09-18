@@ -14,21 +14,19 @@ import java.util.concurrent.Executors;
 
 public class AnswerSender {
     private final Logger logger;
-    private SocketAddress socketAddress;
     private final Executor executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()/3);
 
     public AnswerSender(Logger logger) {
         this.logger = logger;
     }
 
-    public void setSocketAddress(SocketAddress socketAddress) {
-        this.socketAddress = socketAddress;
-    }
 
     private class SendingAnswer implements Runnable{
         private SerializationForClient answer;
-        private SendingAnswer(SerializationForClient answer){
+        private SocketAddress socketAddress;
+        private SendingAnswer(SerializationForClient answer, SocketAddress socketAddress){
             this.answer = answer;
+            this.socketAddress = socketAddress;
         }
         @Override
         public void run() {
@@ -52,7 +50,7 @@ public class AnswerSender {
             answer = null;
         }
     }
-    public void sendAnswer(SerializationForClient serializationForClient) {
-        executor.execute(new SendingAnswer(serializationForClient));
+    public void sendAnswer(SerializationForClient serializationForClient, SocketAddress socketAddress) {
+        executor.execute(new SendingAnswer(serializationForClient, socketAddress));
     }
 }

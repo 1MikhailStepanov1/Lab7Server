@@ -46,7 +46,6 @@ public class Main {
         Logger logger = LoggerFactory.getLogger("Server");
         AnswerSender answerSender = new AnswerSender(logger);
         System.out.println(datagramSocket.getLocalSocketAddress());
-        answerSender.setSocketAddress(datagramSocket.getLocalSocketAddress());
         WorkerFactory workerFactory = new WorkerFactory(collectionManager);
         workerFactory.setStartId(collectionManager.getLastId());
         Connection connection = null;
@@ -81,7 +80,7 @@ public class Main {
         Invoker invoker = new Invoker(receiver, databaseManager);
         invoker.initMap();
         RequestExecutor executor = new RequestExecutor(workerFactory, logger, invoker);
-        RequestAcceptor requestAcceptor = new RequestAcceptor(answerSender, executor, logger);
+        RequestAcceptor requestAcceptor = new RequestAcceptor(executor, logger);
         System.out.println("Server is ready to work.");
         requestAcceptor.acceptRequest(datagramSocket);
         try {
@@ -90,7 +89,6 @@ public class Main {
         } catch (UnknownHostException exception) {
             exception.printStackTrace();
         }
-        requestAcceptor.interrupt();
     }
 }
 
