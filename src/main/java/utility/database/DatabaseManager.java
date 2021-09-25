@@ -146,7 +146,7 @@ public class DatabaseManager {
         }
         return false;
     }
-    public DatabaseCommandResult update(String userName, Worker worker, Long id){
+    public DatabaseCommandResult update(String userName, Worker worker, long id){
         try {
             PreparedStatement getById = connection.prepareStatement(Statements.GET_BY_ID);
             getById.setLong(1, id);
@@ -160,12 +160,17 @@ public class DatabaseManager {
                     update.setDouble(4, worker.getSalary());
                     Timestamp startDate = Timestamp.from(Instant.from(worker.getStartDate()));
                     update.setTimestamp(5, startDate);
-                    Timestamp endDate = Timestamp.from(Instant.from(worker.getEndDate()));
-                    update.setTimestamp(6, endDate);
-                    update.setString(7, worker.getPosition().toString());
+                    if (worker.getEndDate() != null) {
+                        Timestamp endDate = Timestamp.from(Instant.from(worker.getEndDate()));
+                        update.setTimestamp(6, endDate);
+                    } else update.setTimestamp(6, null);
+                    if (worker.getPosition() != null) {
+                        update.setString(7, worker.getPosition().toString());
+                    } else update.setString(7, null);
                     update.setLong(8, worker.getPerson().getHeight());
                     update.setInt(9, worker.getPerson().getWeight());
                     update.setString(10, userName);
+                    update.setLong(11, id);
                     update.executeUpdate();
                 } else return DatabaseCommandResult.PERMISSION;
             } else return DatabaseCommandResult.NO_ID;

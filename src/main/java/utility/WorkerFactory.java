@@ -18,19 +18,19 @@ import java.util.Date;
  */
 public class WorkerFactory {
     private Long id;
-    private Worker loadObject;
-    private CollectionManager collectionManager;
+    private final ThreadLocal<Worker> loadObject = new ThreadLocal<>();
+    private final CollectionManager collectionManager;
 
     public WorkerFactory(CollectionManager collectionManager) {
         this.collectionManager = collectionManager;
     }
 
-    public void setLoadObject(Worker loadObject){
-        this.loadObject = loadObject;
-        this.loadObject.setId(collectionManager.getLastId());
+    public void setLoadObject(Worker worker){
+        worker.setId(collectionManager.getLastId());
+        loadObject.set(worker);
     }
     public Object getLoadObject(){
-        return loadObject;
+        return loadObject.get();
     }
     public Long getId() {
         return id;

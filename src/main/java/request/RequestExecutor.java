@@ -50,7 +50,6 @@ public class RequestExecutor {
                 arg = clientRequest.getArg();
                 if (clientRequest.getWorker() != null) {
                     workerFactory.setLoadObject(clientRequest.getWorker());
-                    System.out.println(clientRequest.getWorker().getId());
                 }
                 name = clientRequest.getName();
                 password = clientRequest.getPassword();

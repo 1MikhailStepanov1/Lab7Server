@@ -3,7 +3,6 @@ package utility.database;
 //  TO USE ON HELIOS
 
 import exceptions.NoDatabaseDataException;
-
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -28,7 +27,7 @@ public class DatabaseConnector {
     }
 }
 //TO USE ON IDEA
-//
+
 //import com.jcraft.jsch.JSch;
 //import com.jcraft.jsch.Session;
 //
@@ -102,5 +101,5 @@ public class DatabaseConnector {
 //        return null;
 //    }
 //}
-//
-//
+
+
